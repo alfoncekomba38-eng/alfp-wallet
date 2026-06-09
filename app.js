@@ -14,18 +14,23 @@ let nft;
 
 // ================= CONNECT WALLET =================
 document.getElementById("connectBtn").onclick = async () => {
-  if (!window.ethereum) return alert("Install MetaMask");
+  try {
+    if (!window.ethereum) return alert("Install MetaMask");
 
-  provider = new ethers.providers.Web3Provider(window.ethereum);
-  await provider.send("eth_requestAccounts", []);
+    provider = new ethers.providers.Web3Provider(window.ethereum);
+    await provider.send("eth_requestAccounts", []);
 
-  signer = provider.getSigner();
-  walletAddress = await signer.getAddress();
+    signer = provider.getSigner();
+    walletAddress = await signer.getAddress();
 
-  document.getElementById("wallet").innerText = walletAddress;
+    document.getElementById("wallet").innerText = walletAddress;
 
-  loadContracts();
-  loadBalance();
+    loadContracts();
+    await loadBalance();
+  } catch (err) {
+    console.error(err);
+    alert("Wallet connection failed");
+  }
 };
 
 // ================= LOAD CONTRACTS =================
@@ -51,38 +56,66 @@ function loadContracts() {
 
 // ================= BALANCE =================
 async function loadBalance() {
-  const bal = await alfp.balanceOf(walletAddress);
-  document.getElementById("balance").innerText =
-    ethers.utils.formatUnits(bal, 18) + " ALFP";
+  try {
+    const bal = await alfp.balanceOf(walletAddress);
+
+    const formatted = parseFloat(
+      ethers.utils.formatUnits(bal, 18)
+    ).toFixed(4);
+
+    document.getElementById("balance").innerText =
+      formatted + " ALFP";
+
+  } catch (err) {
+    console.error(err);
+    document.getElementById("balance").innerText = "Error";
+  }
 }
 
 // ================= STAKE =================
 async function stake() {
-  const amount = document.getElementById("stakeAmount").value;
-  if (!amount) return alert("Enter amount");
+  try {
+    const amount = document.getElementById("stakeAmount").value;
+    if (!amount) return alert("Enter amount");
 
-  const tx = await staking.stake(
-    ethers.utils.parseUnits(amount, 18)
-  );
+    const tx = await staking.stake(
+      ethers.utils.parseUnits(amount, 18)
+    );
 
-  await tx.wait();
-  alert("Staked successfully!");
+    await tx.wait();
+    alert("Staked successfully!");
+
+    await loadBalance();
+  } catch (err) {
+    console.error(err);
+    alert("Stake failed");
+  }
 }
 
 // ================= CLAIM =================
 async function claim() {
-  const tx = await staking.claim();
-  await tx.wait();
+  try {
+    const tx = await staking.claim();
+    await tx.wait();
 
-  alert("Rewards claimed!");
+    alert("Rewards claimed!");
+  } catch (err) {
+    console.error(err);
+    alert("Claim failed");
+  }
 }
 
 // ================= NFT MINT =================
 async function mintNFT() {
-  const tx = await nft.mint(
-    "https://ipfs.io/your-nft-metadata.json"
-  );
+  try {
+    const tx = await nft.mint(
+      "https://ipfs.io/your-nft-metadata.json"
+    );
 
-  await tx.wait();
-  alert("NFT Minted!");
+    await tx.wait();
+    alert("NFT Minted!");
+  } catch (err) {
+    console.error(err);
+    alert("NFT mint failed");
+  }
 }
