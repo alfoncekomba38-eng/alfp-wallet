@@ -4,6 +4,9 @@
   <meta charset="UTF-8" />
   <title>ALFP Wallet</title>
   <link rel="stylesheet" href="style.css" />
+
+  <!-- ethers.js -->
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
 </head>
 <body>
 
@@ -25,15 +28,12 @@
 
     <div class="card">
       <h3>Rewards</h3>
-      <p id="rewards">0</p>
       <button onclick="claim()">Claim Rewards</button>
     </div>
 
     <div class="card">
       <h3>NFT Actions</h3>
       <button onclick="mintNFT()">Mint NFT</button>
-      <button onclick="buyNFT()">Buy NFT</button>
-      <button onclick="stakeNFT()">Stake NFT</button>
     </div>
 
   </div>
