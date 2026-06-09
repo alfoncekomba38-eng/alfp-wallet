@@ -27,6 +27,7 @@ document.getElementById("connectBtn").onclick = async () => {
 
     loadContracts();
     await loadBalance();
+
   } catch (err) {
     console.error(err);
     alert("Wallet connection failed");
@@ -35,21 +36,32 @@ document.getElementById("connectBtn").onclick = async () => {
 
 // ================= LOAD CONTRACTS =================
 function loadContracts() {
+  // ALFP TOKEN (ADD approve + balance)
   alfp = new ethers.Contract(
     ALFP_ADDRESS,
-    ["function balanceOf(address) view returns (uint256)"],
+    [
+      "function balanceOf(address) view returns (uint256)",
+      "function approve(address spender, uint256 amount) returns (bool)"
+    ],
     signer
   );
 
+  // STAKING CONTRACT
   staking = new ethers.Contract(
     STAKING_ADDRESS,
-    ["function stake(uint256 amount)", "function claim()"],
+    [
+      "function stake(uint256 amount)",
+      "function claim()"
+    ],
     signer
   );
 
+  // NFT CONTRACT
   nft = new ethers.Contract(
     NFT_ADDRESS,
-    ["function mint(string uri)"],
+    [
+      "function mint(string uri)"
+    ],
     signer
   );
 }
@@ -59,12 +71,14 @@ async function loadBalance() {
   try {
     const bal = await alfp.balanceOf(walletAddress);
 
-    const formatted = parseFloat(
+    const formatted = Number(
       ethers.utils.formatUnits(bal, 18)
-    ).toFixed(4);
+    );
 
     document.getElementById("balance").innerText =
-      formatted + " ALFP";
+      formatted.toLocaleString(undefined, {
+        maximumFractionDigits: 4
+      }) + " ALFP";
 
   } catch (err) {
     console.error(err);
@@ -72,27 +86,33 @@ async function loadBalance() {
   }
 }
 
-// ================= STAKE =================
+// ================= STAKE (REAL FIX: APPROVE FIRST) =================
 async function stake() {
   try {
     const amount = document.getElementById("stakeAmount").value;
     if (!amount) return alert("Enter amount");
 
-    const tx = await staking.stake(
-      ethers.utils.parseUnits(amount, 18)
-    );
+    const value = ethers.utils.parseUnits(amount, 18);
 
+    // STEP 1: approve staking contract
+    const approveTx = await alfp.approve(STAKING_ADDRESS, value);
+    await approveTx.wait();
+
+    // STEP 2: stake tokens
+    const tx = await staking.stake(value);
     await tx.wait();
+
     alert("Staked successfully!");
 
     await loadBalance();
+
   } catch (err) {
     console.error(err);
     alert("Stake failed");
   }
 }
 
-// ================= CLAIM =================
+// ================= CLAIM REWARDS =================
 async function claim() {
   try {
     const tx = await staking.claim();
@@ -105,15 +125,17 @@ async function claim() {
   }
 }
 
-// ================= NFT MINT =================
+// ================= NFT MINT (REAL SAFE VERSION) =================
 async function mintNFT() {
   try {
     const tx = await nft.mint(
-      "https://ipfs.io/your-nft-metadata.json"
+      "https://ipfs.io/ipfs/YOUR_METADATA.json"
     );
 
     await tx.wait();
-    alert("NFT Minted!");
+
+    alert("NFT Minted successfully!");
+
   } catch (err) {
     console.error(err);
     alert("NFT mint failed");
