@@ -1,54 +1,108 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>ALFP Wallet</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>ALFP Wallet PRO</title>
+
     <link rel="stylesheet" href="style.css">
 
+    <!-- Ethers v6 -->
     <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.1/dist/ethers.umd.min.js"></script>
 </head>
 
 <body>
 
-<h1>ALFP WALLET</h1>
+<div class="container">
 
-<button onclick="connectWallet()">Connect MetaMask</button>
+    <!-- HEADER -->
+    <header>
+        <h1>🔷 ALFP WALLET PRO</h1>
+        <button onclick="connectWallet()" class="connectBtn">
+            Connect MetaMask
+        </button>
+        <p id="wallet">Wallet: Not connected</p>
+    </header>
 
-<p id="wallet">Wallet: Not connected</p>
-<p id="balance">ALFP: 0</p>
-<p id="nftBalance">NFT: 0</p>
+    <hr>
 
-<hr>
+    <!-- BALANCES -->
+    <section class="card">
+        <h2>💰 BALANCES</h2>
 
-<h2>STAKE ALFP</h2>
+        <p id="balance">ALFP: 0</p>
+        <p id="nftBalance">NFT: 0</p>
+    </section>
 
-<input id="amount" placeholder="Amount">
+    <hr>
 
-<select id="plan">
-    <option value="0">30 days</option>
-    <option value="1">90 days</option>
-    <option value="2">180 days</option>
-    <option value="3">365 days</option>
-</select>
+    <!-- STAKE -->
+    <section class="card">
+        <h2>📊 STAKE ALFP</h2>
 
-<button onclick="stake()">Stake</button>
+        <input id="amount" placeholder="Enter ALFP amount">
 
-<br><br>
+        <select id="plan">
+            <option value="0">30 Days (8%)</option>
+            <option value="1">90 Days (12%)</option>
+            <option value="2">180 Days (18%)</option>
+            <option value="3">365 Days (25%)</option>
+        </select>
 
-<input id="stakeIndex" placeholder="Stake Index">
-<button onclick="withdraw()">Withdraw</button>
+        <div class="buttons">
+            <button onclick="stake()" class="stakeBtn">STAKE</button>
+        </div>
+    </section>
 
-<p id="reward">Reward: 0</p>
-<button onclick="checkReward()">Check Reward</button>
+    <hr>
 
-<hr>
+    <!-- WITHDRAW -->
+    <section class="card">
+        <h2>💸 WITHDRAW</h2>
 
-<h2>NFT</h2>
+        <input id="stakeIndex" placeholder="Stake Index (0,1,2...)">
 
-<input id="uri" placeholder="NFT URI">
-<button onclick="mintNFT()">Mint NFT</button>
+        <div class="buttons">
+            <button onclick="withdraw()" class="withdrawBtn">WITHDRAW</button>
+        </div>
+    </section>
 
-<input id="buyId" placeholder="NFT ID">
-<button onclick="buyNFT()">Buy NFT</button>
+    <hr>
+
+    <!-- REWARDS -->
+    <section class="card">
+        <h2>📈 REWARDS</h2>
+
+        <p id="reward">Reward: 0 ALFP</p>
+
+        <button onclick="checkReward()">CHECK REWARD</button>
+    </section>
+
+    <hr>
+
+    <!-- NFT -->
+    <section class="card">
+        <h2>🧠 NFT SYSTEM</h2>
+
+        <input id="uri" placeholder="NFT URI (IPFS link)">
+        <button onclick="mintNFT()">MINT NFT</button>
+
+        <br><br>
+
+        <input id="buyId" placeholder="NFT ID">
+        <button onclick="buyNFT()">BUY NFT</button>
+    </section>
+
+    <hr>
+
+    <!-- FOOTER -->
+    <footer>
+        <p>© ALFP DeFi Wallet v2</p>
+        <p>Contract: 0xbED7...358E3</p>
+    </footer>
+
+</div>
 
 <script src="app.js"></script>
 
