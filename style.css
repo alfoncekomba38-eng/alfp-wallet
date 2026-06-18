@@ -1,25 +1,97 @@
 body {
-    font-family: Arial;
-    background: #0b0b0b;
-    color: gold;
+    margin: 0;
+    font-family: "Arial", sans-serif;
+    background: radial-gradient(circle at top, #111, #000);
+    color: #f5c542;
     text-align: center;
 }
 
-input, select {
-    padding: 10px;
-    margin: 5px;
-    border-radius: 8px;
+/* container */
+.container {
+    max-width: 500px;
+    margin: auto;
+    padding: 20px;
 }
 
+/* header */
+h1 {
+    font-size: 28px;
+    margin-bottom: 10px;
+    color: gold;
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+}
+
+/* cards */
+.card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 215, 0, 0.2);
+    border-radius: 15px;
+    padding: 15px;
+    margin: 15px 0;
+    box-shadow: 0 0 15px rgba(0,0,0,0.5);
+    backdrop-filter: blur(8px);
+}
+
+/* inputs */
+input, select {
+    width: 90%;
+    padding: 12px;
+    margin: 8px 0;
+    border-radius: 10px;
+    border: 1px solid gold;
+    background: #111;
+    color: gold;
+    outline: none;
+    text-align: center;
+}
+
+/* buttons */
 button {
-    padding: 10px 20px;
-    margin: 5px;
-    background: gold;
+    padding: 12px 18px;
+    margin: 8px;
+    background: linear-gradient(45deg, gold, orange);
     border: none;
+    border-radius: 10px;
     cursor: pointer;
     font-weight: bold;
+    color: #000;
+    transition: 0.3s;
 }
 
+button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 10px gold;
+}
+
+/* connect button special */
+.connectBtn {
+    background: linear-gradient(45deg, #00ffd5, #00aaff);
+    color: #000;
+}
+
+/* stake / withdraw buttons */
+.stakeBtn {
+    background: linear-gradient(45deg, #00ff88, #00cc66);
+}
+
+.withdrawBtn {
+    background: linear-gradient(45deg, #ff4444, #ff8800);
+}
+
+/* text */
+p {
+    font-size: 14px;
+}
+
+/* hr */
 hr {
-    margin: 20px;
+    border: 1px solid rgba(255, 215, 0, 0.2);
+    margin: 20px 0;
+}
+
+/* footer */
+footer {
+    margin-top: 20px;
+    font-size: 12px;
+    opacity: 0.7;
 }
