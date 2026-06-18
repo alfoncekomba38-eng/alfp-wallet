@@ -7,25 +7,27 @@ let provider, signer, account;
 /* ================= ABIs ================= */
 
 const tokenABI = [
-"function balanceOf(address) view returns(uint256)",
-"function approve(address,uint256) returns(bool)"
+  "function balanceOf(address) view returns(uint256)",
+  "function approve(address,uint256) returns(bool)"
 ];
 
 const stakingABI = [
-"function stake(uint256,uint8)",
-"function withdrawStake(uint256)",
-"function pendingReward(address,uint256) view returns(uint256)"
+  "function stake(uint256,uint8)",
+  "function withdrawStake(uint256)",
+  "function pendingReward(address,uint256) view returns(uint256)"
 ];
 
 const nftABI = [
-"function mint(string)",
-"function buyNFT(uint256)",
-"function balanceOf(address) view returns(uint256)"
+  "function mint(string)",
+  "function buyNFT(uint256)",
+  "function balanceOf(address) view returns(uint256)"
 ];
 
 /* ========== CONNECT WALLET ========== */
 
 async function connectWallet() {
+  try {
+    if (!window.ethereum) return alert("Install MetaMask");
 
     provider = new ethers.BrowserProvider(window.ethereum);
     await provider.send("eth_requestAccounts", []);
@@ -34,77 +36,113 @@ async function connectWallet() {
     account = await signer.getAddress();
 
     document.getElementById("wallet").innerText =
-        "Wallet: " + account;
+      "Wallet: " + account;
 
-    loadData();
+    await loadData();
+
+  } catch (err) {
+    console.error(err);
+    alert("Wallet connection failed");
+  }
 }
 
-/* ========== LOAD DATA ========== */
+/* ========== LOAD DATA (READ ONLY) ========== */
 
 async function loadData() {
-
-    const token = new ethers.Contract(TOKEN, tokenABI, signer);
-    const nft = new ethers.Contract(NFT, nftABI, signer);
+  try {
+    const token = new ethers.Contract(TOKEN, tokenABI, provider);
+    const nft = new ethers.Contract(NFT, nftABI, provider);
 
     const bal = await token.balanceOf(account);
     const nftBal = await nft.balanceOf(account);
 
     document.getElementById("balance").innerText =
-        "ALFP: " + ethers.formatUnits(bal, 18);
+      "ALFP: " + ethers.formatUnits(bal, 18);
 
     document.getElementById("nftBalance").innerText =
-        "NFT: " + nftBal;
+      "NFT: " + nftBal.toString();
+
+  } catch (err) {
+    console.error(err);
+  }
 }
 
 /* ========== STAKE ========== */
 
 async function stake() {
-
+  try {
     const amount = document.getElementById("amount").value;
     const plan = document.getElementById("plan").value;
+
+    if (!amount) return alert("Enter amount");
 
     const token = new ethers.Contract(TOKEN, tokenABI, signer);
     const staking = new ethers.Contract(STAKING, stakingABI, signer);
 
     const value = ethers.parseUnits(amount, 18);
 
-    await token.approve(STAKING, value);
-    const tx = await staking.stake(value, plan);
+    // approve
+    const approveTx = await token.approve(STAKING, value);
+    await approveTx.wait();
 
+    // stake
+    const tx = await staking.stake(value, plan);
     await tx.wait();
-    alert("Staked!");
+
+    alert("Staked Successfully!");
+
+    await loadData();
+
+  } catch (err) {
+    console.error(err);
+    alert("Stake failed");
+  }
 }
 
-/* ========== REWARD ========== */
+/* ========== CHECK REWARD ========== */
 
 async function checkReward() {
-
-    const staking = new ethers.Contract(STAKING, stakingABI, signer);
+  try {
     const index = document.getElementById("stakeIndex").value;
+
+    const staking = new ethers.Contract(STAKING, stakingABI, provider);
 
     const reward = await staking.pendingReward(account, index);
 
     document.getElementById("reward").innerText =
-        "Reward: " + ethers.formatUnits(reward, 18);
+      "Reward: " + ethers.formatUnits(reward, 18) + " ALFP";
+
+  } catch (err) {
+    console.error(err);
+    alert("Error checking reward");
+  }
 }
 
 /* ========== WITHDRAW ========== */
 
 async function withdraw() {
+  try {
+    const index = document.getElementById("stakeIndex").value;
 
     const staking = new ethers.Contract(STAKING, stakingABI, signer);
-    const index = document.getElementById("stakeIndex").value;
 
     const tx = await staking.withdrawStake(index);
     await tx.wait();
 
     alert("Withdraw successful");
+
+    await loadData();
+
+  } catch (err) {
+    console.error(err);
+    alert("Withdraw failed");
+  }
 }
 
-/* ========== NFT MINT ========== */
+/* ========== MINT NFT ========== */
 
 async function mintNFT() {
-
+  try {
     const uri = document.getElementById("uri").value;
 
     const nft = new ethers.Contract(NFT, nftABI, signer);
@@ -113,13 +151,19 @@ async function mintNFT() {
     await tx.wait();
 
     alert("NFT Minted");
-    loadData();
+
+    await loadData();
+
+  } catch (err) {
+    console.error(err);
+    alert("NFT mint failed");
+  }
 }
 
 /* ========== BUY NFT ========== */
 
 async function buyNFT() {
-
+  try {
     const id = document.getElementById("buyId").value;
 
     const nft = new ethers.Contract(NFT, nftABI, signer);
@@ -128,5 +172,11 @@ async function buyNFT() {
     await tx.wait();
 
     alert("NFT Bought");
-    loadData();
+
+    await loadData();
+
+  } catch (err) {
+    console.error(err);
+    alert("NFT buy failed");
+  }
 }
