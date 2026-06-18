@@ -1,43 +1,56 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <title>ALFP Wallet</title>
-  <link rel="stylesheet" href="style.css" />
+    <title>ALFP Wallet</title>
+    <link rel="stylesheet" href="style.css">
 
-  <!-- ethers.js -->
-  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.1/dist/ethers.umd.min.js"></script>
 </head>
+
 <body>
 
-  <div class="container">
-    <h1>ALFP WALLET</h1>
+<h1>ALFP WALLET</h1>
 
-    <button id="connectBtn">Connect MetaMask</button>
+<button onclick="connectWallet()">Connect MetaMask</button>
 
-    <div class="card">
-      <p>Wallet: <span id="wallet">Not connected</span></p>
-      <p>ALFP Balance: <span id="balance">0</span></p>
-    </div>
+<p id="wallet">Wallet: Not connected</p>
+<p id="balance">ALFP: 0</p>
+<p id="nftBalance">NFT: 0</p>
 
-    <div class="card">
-      <h3>Stake ALFP</h3>
-      <input id="stakeAmount" placeholder="Amount" />
-      <button onclick="stake()">Stake</button>
-    </div>
+<hr>
 
-    <div class="card">
-      <h3>Rewards</h3>
-      <button onclick="claim()">Claim Rewards</button>
-    </div>
+<h2>STAKE ALFP</h2>
 
-    <div class="card">
-      <h3>NFT Actions</h3>
-      <button onclick="mintNFT()">Mint NFT</button>
-    </div>
+<input id="amount" placeholder="Amount">
 
-  </div>
+<select id="plan">
+    <option value="0">30 days</option>
+    <option value="1">90 days</option>
+    <option value="2">180 days</option>
+    <option value="3">365 days</option>
+</select>
 
-  <script src="app.js"></script>
+<button onclick="stake()">Stake</button>
+
+<br><br>
+
+<input id="stakeIndex" placeholder="Stake Index">
+<button onclick="withdraw()">Withdraw</button>
+
+<p id="reward">Reward: 0</p>
+<button onclick="checkReward()">Check Reward</button>
+
+<hr>
+
+<h2>NFT</h2>
+
+<input id="uri" placeholder="NFT URI">
+<button onclick="mintNFT()">Mint NFT</button>
+
+<input id="buyId" placeholder="NFT ID">
+<button onclick="buyNFT()">Buy NFT</button>
+
+<script src="app.js"></script>
+
 </body>
 </html>
