@@ -31,24 +31,30 @@ function shortAddress(addr) {
   return addr.slice(0, 6) + "..." + addr.slice(-4);
 }
 
+function getError(err) {
+  return err?.reason || err?.message || "Transaction failed";
+}
+
+/* ================= NETWORK CHECK ================= */
+
 async function checkNetwork() {
-  const network = await provider.getNetwork();
+  if (!window.ethereum) return;
 
-  if (network.chainId !== 56n) {
-    alert("Please switch to BNB Smart Chain");
+  const chainId = await window.ethereum.request({ method: "eth_chainId" });
 
+  if (chainId !== "0x38") {
     try {
       await window.ethereum.request({
         method: "wallet_switchEthereumChain",
         params: [{ chainId: "0x38" }]
       });
     } catch (err) {
-      console.log(err);
+      alert("Please switch manually to BNB Smart Chain");
     }
   }
 }
 
-/* ================= CONNECT ================= */
+/* ================= CONNECT WALLET ================= */
 
 async function connectWallet() {
   try {
@@ -58,9 +64,11 @@ async function connectWallet() {
       return;
     }
 
-    provider = new ethers.BrowserProvider(window.ethereum);
+    await window.ethereum.request({
+      method: "eth_requestAccounts"
+    });
 
-    await provider.send("eth_requestAccounts", []);
+    provider = new ethers.BrowserProvider(window.ethereum);
 
     signer = await provider.getSigner();
     account = await signer.getAddress();
@@ -73,88 +81,56 @@ async function connectWallet() {
     await loadData();
 
   } catch (err) {
-
     console.error(err);
-    alert("Wallet connection failed");
-
+    alert(getError(err));
   }
 }
 
 /* ================= LOAD DATA ================= */
 
 async function loadData() {
-
   try {
+    if (!account) return;
 
-    const token = new ethers.Contract(
-      TOKEN,
-      tokenABI,
-      provider
-    );
-
-    const nft = new ethers.Contract(
-      NFT,
-      nftABI,
-      provider
-    );
+    const token = new ethers.Contract(TOKEN, tokenABI, provider);
+    const nft = new ethers.Contract(NFT, nftABI, provider);
 
     const bal = await token.balanceOf(account);
     const nftBal = await nft.balanceOf(account);
 
     document.getElementById("balance").innerText =
-      "ALFP: " +
-      ethers.formatUnits(bal, 18);
+      "ALFP: " + ethers.formatUnits(bal, 18);
 
     document.getElementById("nftBalance").innerText =
       "NFT: " + nftBal.toString();
 
   } catch (err) {
-
     console.error(err);
-
   }
 }
 
 /* ================= STAKE ================= */
 
 async function stake() {
-
   try {
 
-    const amount =
-      document.getElementById("amount").value;
+    const amount = document.getElementById("amount").value;
+    const plan = document.getElementById("plan").value;
 
-    const plan =
-      document.getElementById("plan").value;
-
-    if (!amount) {
-      alert("Enter amount");
+    if (!amount || amount <= 0) {
+      alert("Enter valid amount");
       return;
     }
 
-    const token = new ethers.Contract(
-      TOKEN,
-      tokenABI,
-      signer
-    );
+    const token = new ethers.Contract(TOKEN, tokenABI, signer);
+    const staking = new ethers.Contract(STAKING, stakingABI, signer);
 
-    const staking = new ethers.Contract(
-      STAKING,
-      stakingABI,
-      signer
-    );
+    const value = ethers.parseUnits(amount, 18);
 
-    const value =
-      ethers.parseUnits(amount, 18);
-
-    const approveTx =
-      await token.approve(STAKING, value);
-
+    const approveTx = await token.approve(STAKING, value);
     await approveTx.wait();
 
-    const tx =
-      await staking.stake(value, plan);
-
+    const tx = await staking.stake(value, plan);
     await tx.wait();
 
     alert("Staked Successfully!");
@@ -162,65 +138,41 @@ async function stake() {
     await loadData();
 
   } catch (err) {
-
     console.error(err);
-    alert("Stake failed");
-
+    alert(getError(err));
   }
 }
 
 /* ================= REWARD ================= */
 
 async function checkReward() {
-
   try {
 
-    const index =
-      document.getElementById("stakeIndex").value;
+    const index = document.getElementById("stakeIndex").value;
 
-    const staking = new ethers.Contract(
-      STAKING,
-      stakingABI,
-      provider
-    );
+    const staking = new ethers.Contract(STAKING, stakingABI, provider);
 
-    const reward =
-      await staking.pendingReward(
-        account,
-        index
-      );
+    const reward = await staking.pendingReward(account, index);
 
     document.getElementById("reward").innerText =
-      "Reward: " +
-      ethers.formatUnits(reward, 18) +
-      " ALFP";
+      "Reward: " + ethers.formatUnits(reward, 18) + " ALFP";
 
   } catch (err) {
-
     console.error(err);
-    alert("Error checking reward");
-
+    alert(getError(err));
   }
 }
 
 /* ================= WITHDRAW ================= */
 
 async function withdraw() {
-
   try {
 
-    const index =
-      document.getElementById("stakeIndex").value;
+    const index = document.getElementById("stakeIndex").value;
 
-    const staking = new ethers.Contract(
-      STAKING,
-      stakingABI,
-      signer
-    );
+    const staking = new ethers.Contract(STAKING, stakingABI, signer);
 
-    const tx =
-      await staking.withdrawStake(index);
-
+    const tx = await staking.withdrawStake(index);
     await tx.wait();
 
     alert("Withdraw successful");
@@ -228,31 +180,21 @@ async function withdraw() {
     await loadData();
 
   } catch (err) {
-
     console.error(err);
-    alert("Withdraw failed");
-
+    alert(getError(err));
   }
 }
 
 /* ================= MINT NFT ================= */
 
 async function mintNFT() {
-
   try {
 
-    const uri =
-      document.getElementById("uri").value;
+    const uri = document.getElementById("uri").value;
 
-    const nft = new ethers.Contract(
-      NFT,
-      nftABI,
-      signer
-    );
+    const nft = new ethers.Contract(NFT, nftABI, signer);
 
-    const tx =
-      await nft.mint(uri);
-
+    const tx = await nft.mint(uri);
     await tx.wait();
 
     alert("NFT Minted");
@@ -260,31 +202,21 @@ async function mintNFT() {
     await loadData();
 
   } catch (err) {
-
     console.error(err);
-    alert("NFT mint failed");
-
+    alert(getError(err));
   }
 }
 
 /* ================= BUY NFT ================= */
 
 async function buyNFT() {
-
   try {
 
-    const id =
-      document.getElementById("buyId").value;
+    const id = document.getElementById("buyId").value;
 
-    const nft = new ethers.Contract(
-      NFT,
-      nftABI,
-      signer
-    );
+    const nft = new ethers.Contract(NFT, nftABI, signer);
 
-    const tx =
-      await nft.buyNFT(id);
-
+    const tx = await nft.buyNFT(id);
     await tx.wait();
 
     alert("NFT Bought");
@@ -292,76 +224,50 @@ async function buyNFT() {
     await loadData();
 
   } catch (err) {
-
     console.error(err);
-    alert("NFT buy failed");
-
+    alert(getError(err));
   }
 }
 
 /* ================= AUTO CONNECT ================= */
 
 window.addEventListener("load", async () => {
-
-  if (!window.ethereum) return;
-
   try {
 
-    provider =
-      new ethers.BrowserProvider(
-        window.ethereum
-      );
+    if (!window.ethereum) return;
 
-    const accounts =
-      await provider.listAccounts();
+    provider = new ethers.BrowserProvider(window.ethereum);
+
+    const accounts = await provider.listAccounts();
 
     if (accounts.length > 0) {
+      signer = await provider.getSigner();
+      account = await signer.getAddress();
 
-      signer =
-        await provider.getSigner();
-
-      account =
-        await signer.getAddress();
-
-      document.getElementById(
-        "wallet"
-      ).innerText =
-        "Wallet: " +
-        shortAddress(account);
+      document.getElementById("wallet").innerText =
+        "Wallet: " + shortAddress(account);
 
       await loadData();
     }
 
   } catch (err) {
-
     console.log(err);
-
   }
-
 });
 
 /* ================= EVENTS ================= */
 
 if (window.ethereum) {
 
-  window.ethereum.on(
-    "accountsChanged",
-    () => location.reload()
-  );
-
-  window.ethereum.on(
-    "chainChanged",
-    () => location.reload()
-  );
+  window.ethereum.on("accountsChanged", () => location.reload());
+  window.ethereum.on("chainChanged", () => location.reload());
 
 }
 
 /* ================= AUTO REFRESH ================= */
 
 setInterval(async () => {
-
   if (account) {
     await loadData();
   }
-
-}, 30000);
+}, 15000);
