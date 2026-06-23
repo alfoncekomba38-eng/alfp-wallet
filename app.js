@@ -5,7 +5,10 @@ const PAY = "0x24f937cb79931556e6cf8d2901fe2dbb0c0d84f0";
 
 let provider, signer, account;
 
-/* ========== APY CONFIG ========== */
+/* ========== STATE ========== */
+let refreshInterval;
+
+/* ========== APY ========== */
 const PLAN_APY = { 0: 8, 1: 12, 2: 18, 3: 25 };
 
 /* ========== ABIs ========== */
@@ -41,11 +44,12 @@ function shortAddress(a) {
 }
 
 function getError(e) {
-  return e?.reason || e?.message || "Transaction failed";
+  console.error(e);
+  return (e?.reason || e?.message || "Transaction failed").slice(0, 120);
 }
 
 /* ========== UI ========== */
-function setUI(addr) {
+async function setUI(addr) {
   account = addr;
 
   document.getElementById("wallet").innerText =
@@ -56,8 +60,9 @@ function setUI(addr) {
   btn.disabled = true;
 
   renderAPY();
-  loadData();
-  loadReferralData();
+
+  await Promise.all([loadData(), loadReferralData()]);
+  startAutoRefresh();
 }
 
 /* ========== NETWORK ========== */
@@ -85,7 +90,7 @@ async function connectWallet() {
     const addr = await signer.getAddress();
 
     await checkNetwork();
-    setUI(addr);
+    await setUI(addr);
 
   } catch (e) {
     alert(getError(e));
@@ -99,8 +104,10 @@ async function loadData() {
   const token = new ethers.Contract(TOKEN, tokenABI, provider);
   const nft = new ethers.Contract(NFT, nftABI, provider);
 
-  const bal = await token.balanceOf(account);
-  const nftBal = await nft.balanceOf(account);
+  const [bal, nftBal] = await Promise.all([
+    token.balanceOf(account),
+    nft.balanceOf(account)
+  ]);
 
   document.getElementById("balance").innerText =
     "ALFP: " + Number(ethers.formatUnits(bal, 18)).toFixed(4);
@@ -109,7 +116,7 @@ async function loadData() {
     "NFT: " + nftBal.toString();
 }
 
-/* ========== REFERRAL SYSTEM ========== */
+/* ========== REFERRAL ========== */
 async function loadReferralData() {
   try {
     if (!account) return;
@@ -119,11 +126,10 @@ async function loadReferralData() {
     const rewards = await staking.referralRewards(account);
     const total = await staking.totalReferrals(account);
 
-    const link =
-      window.location.origin +
-      window.location.pathname +
-      "?ref=" +
-      account;
+    const url = new URL(window.location.href);
+    url.searchParams.set("ref", account);
+
+    const link = url.toString();
 
     document.getElementById("myRefLink").innerText =
       "Referral Link: " + link;
@@ -151,7 +157,7 @@ function copyReferralLink() {
     .replace("Referral Link: ", "");
 
   navigator.clipboard.writeText(txt);
-  alert("Referral Link Copied!");
+  alert("Copied!");
 }
 
 async function claimReferralReward() {
@@ -161,8 +167,8 @@ async function claimReferralReward() {
     const tx = await staking.claimReferral();
     await tx.wait();
 
-    alert("Referral Reward Claimed!");
-    loadReferralData();
+    alert("Claimed!");
+    await loadReferralData();
 
   } catch (e) {
     alert(getError(e));
@@ -172,10 +178,9 @@ async function claimReferralReward() {
 /* ========== APY ========== */
 function renderAPY() {
   const plan = document.getElementById("plan")?.value || 0;
-  const apy = PLAN_APY[plan];
 
   document.getElementById("apy").innerText =
-    `🔥 APY: ${apy}% (Live)`;
+    `🔥 APY: ${PLAN_APY[plan]}%`;
 }
 
 /* ========== SAFE APPROVE ========== */
@@ -184,8 +189,11 @@ async function safeApprove(tokenAddr, spender, amount) {
 
   const allowance = await token.allowance(account, spender);
 
-  if (allowance < amount) {
-    const tx = await token.approve(spender, amount);
+  const allowanceBN = BigInt(allowance.toString());
+  const amountBN = BigInt(amount.toString());
+
+  if (allowanceBN < amountBN) {
+    const tx = await token.approve(spender, amountBN);
     await tx.wait();
   }
 }
@@ -206,7 +214,7 @@ async function stake() {
     await tx.wait();
 
     alert("Staked Successfully!");
-    loadData();
+    await loadData();
 
   } catch (e) {
     alert(getError(e));
@@ -224,14 +232,14 @@ async function withdraw() {
     await tx.wait();
 
     alert("Withdraw successful");
-    loadData();
+    await loadData();
 
   } catch (e) {
     alert(getError(e));
   }
 }
 
-/* ========== REWARD ========== */
+/* ========== REWARD CHECK ========== */
 async function checkReward() {
   try {
     const index = document.getElementById("stakeIndex").value;
@@ -250,10 +258,17 @@ async function checkReward() {
   }
 }
 
-/* ========== NFT ========== */
-async function mintNFT() { /* unchanged */ }
-async function buyNFT() { /* unchanged */ }
-async function payMerchant() { /* unchanged */ }
+/* ========== AUTO REFRESH ========== */
+function startAutoRefresh() {
+  if (refreshInterval) clearInterval(refreshInterval);
+
+  refreshInterval = setInterval(() => {
+    if (!account) return;
+
+    loadData().catch(()=>{});
+    loadReferralData().catch(()=>{});
+  }, 10000);
+}
 
 /* ========== AUTO LOAD ========== */
 window.addEventListener("load", async () => {
@@ -267,7 +282,7 @@ window.addEventListener("load", async () => {
 
   if (accounts.length > 0) {
     signer = await provider.getSigner();
-    setUI(accounts[0]);
+    await setUI(accounts[0]);
   }
 });
 
@@ -276,11 +291,3 @@ if (window.ethereum) {
   window.ethereum.on("accountsChanged", () => location.reload());
   window.ethereum.on("chainChanged", () => location.reload());
 }
-
-/* ========== AUTO REFRESH ========== */
-setInterval(() => {
-  if (account) {
-    loadData();
-    loadReferralData();
-  }
-}, 10000);
